@@ -1,75 +1,75 @@
+/* eslint-disable import/no-unresolved */
+/* eslint-disable import/prefer-default-export */
 import { Meteor } from 'meteor/meteor';
-import { Mongo } from "meteor/mongo";
+import { Mongo } from 'meteor/mongo';
 import { check } from 'meteor/check';
 
-export const Tasks = new Mongo.Collection('tasks')
+export const Tasks = new Mongo.Collection('tasks');
 
 if (Meteor.isServer) {
-	//if code is running in server
-	Meteor.publish('tasks', function tasksPublication() {
-		return Tasks.find({
-			$or: [
-				{ private: { $ne: true } },
-				{owner: this.userId},
-			],
-		});
-	});
+  // if code is running in server
+  Meteor.publish('tasks', function tasksPublication() {
+    return Tasks.find({
+      $or: [
+        { private: { $ne: true } },
+        { owner: this.userId },
+      ],
+    });
+  });
 }
 
 Meteor.methods({
-	'tasks.insert'(text) {
-		check(text, String);
+  'tasks.insert': function (text) {
+    check(text, String);
 
-		if (! this.userId){
-			throw new Meteor.Error('not-authorized');
-		}
+    if (!this.userId) {
+      throw new Meteor.Error('not-authorized');
+    }
 
-		Tasks.insert({
-			text,
-			createdAt: new Date(),
-			owner: Meteor.userId(), //current user's _id
-			username: Meteor.user().username, // Meteor.user() to get the whole user document
-		  }); 
-		
-	},
+    Tasks.insert({
+      text,
+      createdAt: new Date(),
+      owner: Meteor.userId(), // current user's _id
+      username: Meteor.user().username, // Meteor.user() to get the whole user document
+    });
+  },
 
-	'tasks.remove'(taskId) {
-		check(taskId, String);
-		
-		const task = Tasks.findOne(taskId);
+  'tasks.remove': function (taskId) {
+    check(taskId, String);
 
-		if( task.private && task.owner !== this.userId) {
-			throw new Meteor.Error('not-authorized');
-		}
+    const task = Tasks.findOne(taskId);
 
-		Tasks.remove(taskId);
-	},
+    if (task.private && task.owner !== this.userId) {
+      throw new Meteor.Error('not-authorized');
+    }
 
-	'tasks.setChecked'(taskId, setChecked) {
-		check(taskId, String);
-		check(setChecked, Boolean);
+    Tasks.remove(taskId);
+  },
 
-		const task = Tasks.findOne(taskId);
+  'tasks.setChecked': function (taskId, setChecked) {
+    check(taskId, String);
+    check(setChecked, Boolean);
 
-		if( task.private && task.owner !== this.userId) {
-			throw new Meteor.Error('not-authorized');
-		}
+    const task = Tasks.findOne(taskId);
 
-		Tasks.update(taskId, {
-			$set: { checked: setChecked},
-		});
+    if (task.private && task.owner !== this.userId) {
+      throw new Meteor.Error('not-authorized');
+    }
 
-	},
-	'tasks.setPrivate'(taskId, setPrivateState) {
-		check(taskId, String);
-		check(setPrivateState, Boolean);
+    Tasks.update(taskId, {
+      $set: { checked: setChecked },
+    });
+  },
+  'tasks.setPrivate': function (taskId, setPrivateState) {
+    check(taskId, String);
+    check(setPrivateState, Boolean);
 
-		const task = Tasks.findOne(taskId);
+    const task = Tasks.findOne(taskId);
 
-		if(task.owner !== this.userId) {
-			throw new Meteor.Error('not-authorized');
-		}
+    if (task.owner !== this.userId) {
+      throw new Meteor.Error('not-authorized');
+    }
 
-		Tasks.update(taskId, { $set: { private : setPrivateState} });
-	},
+    Tasks.update(taskId, { $set: { private: setPrivateState } });
+  },
 });
